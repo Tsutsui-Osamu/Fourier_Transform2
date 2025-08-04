@@ -15,47 +15,22 @@ st.set_page_config(
     layout="wide"
 )
 
-# フーリエ変換クラス（最適化版 - 元のアルゴリズム保持）
+# フーリエ変換クラス（軽量最適化版）
 class FT_calc:
     def __init__(self, x, y):
-        self.x = np.array(x)  # NumPy配列に変換
-        self.y = np.array(y)
-        # 事前計算：dx配列
-        self.dx = np.diff(self.x)  # x[i+1] - x[i] の配列
-        self.y_truncated = self.y[:-1]  # 最後の要素を除く
+        self.x = np.array(x, dtype=np.float32)  # メモリ効率向上
+        self.y = np.array(y, dtype=np.float32)
+        # 事前計算を簡素化
+        self.dx = np.diff(self.x)
+        self.y_truncated = self.y[:-1]
 
     def calculation(self, w):
-        # ベクトル化された計算（元のアルゴリズムと同じ数学的処理）
+        # シンプルなベクトル化（元のアルゴリズム保持）
         cos_terms = self.dx * self.y_truncated * np.cos(w * self.x[:-1])
         sin_terms = self.dx * self.y_truncated * np.sin(w * self.x[:-1])
-        
         sum_cos = np.sum(cos_terms)
         sum_sin = np.sum(sin_terms)
-        
         return np.sqrt(sum_cos**2 + sum_sin**2)
-    
-    def batch_calculation(self, w_values):
-        """複数の周波数を一括計算（さらなる高速化）"""
-        w_array = np.array(w_values)
-        results = []
-        
-        # バッチサイズを調整してメモリ効率を保つ
-        batch_size = min(100, len(w_array))
-        
-        for i in range(0, len(w_array), batch_size):
-            batch_w = w_array[i:i+batch_size]
-            batch_results = []
-            
-            for w in batch_w:
-                cos_terms = self.dx * self.y_truncated * np.cos(w * self.x[:-1])
-                sin_terms = self.dx * self.y_truncated * np.sin(w * self.x[:-1])
-                sum_cos = np.sum(cos_terms)
-                sum_sin = np.sum(sin_terms)
-                batch_results.append(np.sqrt(sum_cos**2 + sum_sin**2))
-            
-            results.extend(batch_results)
-        
-        return np.array(results)
 
 # アプリのタイトル
 st.title("📊 フーリエ変換 解析ツール")
@@ -71,9 +46,9 @@ uploaded_file = st.sidebar.file_uploader(
     help="2列のデータ（x座標, y座標）が入ったCSVファイルをアップロードしてください"
 )
 
-# パラメータ設定
-w_max = st.sidebar.number_input("最大周波数 (w_max)", min_value=10, max_value=1000, value=50, step=10)
-w_step = st.sidebar.number_input("周波数ステップ", min_value=0.01, max_value=1.0, value=0.5, step=0.01)
+# パラメータ設定（軽量デフォルト）
+w_max = st.sidebar.number_input("最大周波数 (w_max)", min_value=10, max_value=1000, value=20, step=5)
+w_step = st.sidebar.number_input("周波数ステップ", min_value=0.1, max_value=2.0, value=1.0, step=0.1)
 
 # サンプルデータ生成機能
 st.sidebar.markdown("---")
@@ -117,8 +92,8 @@ with col1:
         # データの統計情報
         st.write("データ統計:")
         st.write(f"- データ点数: {len(df)}")
-        st.write(f"- X範囲: {df.iloc[:, 0].min():.3f} ～ {df.iloc[:, 0].max():.3f}")
-        st.write(f"- Y範囲: {df.iloc[:, 1].min():.3f} ～ {df.iloc[:, 1].max():.3f}")
+        st.write(f"- x範囲: {df.iloc[:, 0].min():.3f} ～ {df.iloc[:, 0].max():.3f}")
+        st.write(f"- y範囲: {df.iloc[:, 1].min():.3f} ～ {df.iloc[:, 1].max():.3f}")
         
         # 入力データのプロット
         fig1, ax1 = plt.subplots(figsize=(8, 4))
@@ -141,13 +116,27 @@ with col2:
                     x = df.iloc[:, 0].tolist()
                     y = df.iloc[:, 1].tolist()
                     
-                    # フーリエ変換の計算（最適化版 - 元アルゴリズム保持）
+                    # フーリエ変換の計算（シンプル最適化版）
                     ft = FT_calc(x, y)
                     w_values = np.arange(0, w_max, w_step)
                     
-                    # 高速バッチ計算を使用
-                    with st.spinner("フーリエ変換を計算中..."):
-                        sum_results = ft.batch_calculation(w_values)
+                    # プログレスバー付きで安全に計算
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    sum_results = []
+                    
+                    total_calculations = len(w_values)
+                    for i, w in enumerate(w_values):
+                        sum_results.append(ft.calculation(w))
+                        
+                        # 進捗更新（5%ごと）
+                        if i % max(1, total_calculations // 20) == 0:
+                            progress = (i + 1) / total_calculations
+                            progress_bar.progress(progress)
+                            status_text.text(f'計算中... {int(progress * 100)}% ({i+1}/{total_calculations})')
+                    
+                    progress_bar.empty()
+                    status_text.empty()
                     
                     # 結果のプロット
                     fig2, ax2 = plt.subplots(figsize=(8, 4))
