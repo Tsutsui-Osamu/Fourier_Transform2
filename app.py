@@ -98,9 +98,9 @@ with col1:
         # 入力データのプロット
         fig1, ax1 = plt.subplots(figsize=(8, 4))
         ax1.plot(df.iloc[:, 0], df.iloc[:, 1], 'b-', linewidth=1.5)
-        ax1.set_xlabel('X')
-        ax1.set_ylabel('Y')
-        ax1.set_title('入力データ')
+        ax1.set_xlabel('x')
+        ax1.set_ylabel('y')
+        ax1.set_title('y vs x')
         ax1.grid(True, alpha=0.3)
         st.pyplot(fig1)
 
@@ -143,7 +143,7 @@ with col2:
                     ax2.plot(w_values, sum_results, 'r-', linewidth=1.5)
                     ax2.set_xlabel('Frequency (w)')
                     ax2.set_ylabel('Magnitude')
-                    ax2.set_title('フーリエ変換スペクトラム')
+                    ax2.set_title('result')
                     ax2.grid(True, alpha=0.3)
                     st.pyplot(fig2)
                     
@@ -184,4 +184,4 @@ st.markdown("2. 必要に応じて周波数範囲を調整")
 st.markdown("3. 'フーリエ変換を実行'ボタンをクリック")
 st.markdown("4. 結果を確認し、必要に応じてCSVファイルとしてダウンロード")
 
-st.markdown("**📄 CSVファイル形式:** 1列目x value、2列目f(x) value")
+st.markdown("**📄 CSVファイル形式:** 1列目x値、2列目y値")
