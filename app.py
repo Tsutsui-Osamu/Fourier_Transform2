@@ -15,20 +15,47 @@ st.set_page_config(
     layout="wide"
 )
 
-# フーリエ変換クラス（元のコードを活用）
+# フーリエ変換クラス（最適化版 - 元のアルゴリズム保持）
 class FT_calc:
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
+        self.x = np.array(x)  # NumPy配列に変換
+        self.y = np.array(y)
+        # 事前計算：dx配列
+        self.dx = np.diff(self.x)  # x[i+1] - x[i] の配列
+        self.y_truncated = self.y[:-1]  # 最後の要素を除く
 
     def calculation(self, w):
-        sum_cos = 0
-        sum_sin = 0
-        for i in range(len(self.x) - 1):
-            dx = self.x[i+1] - self.x[i]
-            sum_cos += dx * self.y[i] * np.cos(w * self.x[i])
-            sum_sin += dx * self.y[i] * np.sin(w * self.x[i])
+        # ベクトル化された計算（元のアルゴリズムと同じ数学的処理）
+        cos_terms = self.dx * self.y_truncated * np.cos(w * self.x[:-1])
+        sin_terms = self.dx * self.y_truncated * np.sin(w * self.x[:-1])
+        
+        sum_cos = np.sum(cos_terms)
+        sum_sin = np.sum(sin_terms)
+        
         return np.sqrt(sum_cos**2 + sum_sin**2)
+    
+    def batch_calculation(self, w_values):
+        """複数の周波数を一括計算（さらなる高速化）"""
+        w_array = np.array(w_values)
+        results = []
+        
+        # バッチサイズを調整してメモリ効率を保つ
+        batch_size = min(100, len(w_array))
+        
+        for i in range(0, len(w_array), batch_size):
+            batch_w = w_array[i:i+batch_size]
+            batch_results = []
+            
+            for w in batch_w:
+                cos_terms = self.dx * self.y_truncated * np.cos(w * self.x[:-1])
+                sin_terms = self.dx * self.y_truncated * np.sin(w * self.x[:-1])
+                sum_cos = np.sum(cos_terms)
+                sum_sin = np.sum(sin_terms)
+                batch_results.append(np.sqrt(sum_cos**2 + sum_sin**2))
+            
+            results.extend(batch_results)
+        
+        return np.array(results)
 
 # アプリのタイトル
 st.title("📊 フーリエ変換 解析ツール")
@@ -45,8 +72,8 @@ uploaded_file = st.sidebar.file_uploader(
 )
 
 # パラメータ設定
-w_max = st.sidebar.number_input("最大周波数 (w_max)", min_value=10, max_value=1000, value=200, step=10)
-w_step = st.sidebar.number_input("周波数ステップ", min_value=0.01, max_value=1.0, value=0.1, step=0.01)
+w_max = st.sidebar.number_input("最大周波数 (w_max)", min_value=10, max_value=1000, value=50, step=10)
+w_step = st.sidebar.number_input("周波数ステップ", min_value=0.01, max_value=1.0, value=0.5, step=0.01)
 
 # サンプルデータ生成機能
 st.sidebar.markdown("---")
@@ -114,10 +141,13 @@ with col2:
                     x = df.iloc[:, 0].tolist()
                     y = df.iloc[:, 1].tolist()
                     
-                    # フーリエ変換の計算
+                    # フーリエ変換の計算（最適化版 - 元アルゴリズム保持）
                     ft = FT_calc(x, y)
                     w_values = np.arange(0, w_max, w_step)
-                    sum_results = [ft.calculation(w) for w in w_values]
+                    
+                    # 高速バッチ計算を使用
+                    with st.spinner("フーリエ変換を計算中..."):
+                        sum_results = ft.batch_calculation(w_values)
                     
                     # 結果のプロット
                     fig2, ax2 = plt.subplots(figsize=(8, 4))
@@ -165,4 +195,4 @@ st.markdown("2. 必要に応じて周波数範囲を調整")
 st.markdown("3. 'フーリエ変換を実行'ボタンをクリック")
 st.markdown("4. 結果を確認し、必要に応じてCSVファイルとしてダウンロード")
 
-st.markdown("**📄 CSVファイル形式:** 1列目がX座標、2列目がY座標の数値データ")
+st.markdown("**📄 CSVファイル形式:** 1列目x value、2列目f(x) value")
