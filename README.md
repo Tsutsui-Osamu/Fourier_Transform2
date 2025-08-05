@@ -1,6 +1,6 @@
 # Fourier_Transform2
 
-# フーリエ変換 解析ツール
+# フーリエ変換 解析アプリ
 
 StreamlitとRenderを使用したフーリエ変換Webアプリケーション
 
