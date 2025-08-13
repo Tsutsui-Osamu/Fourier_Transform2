@@ -239,7 +239,7 @@ with col2:
                 except Exception as e:
                     st.error(f"❌ 計算エラー: {e}")
     else:
-        st.info("👆 CSVファイルをアップロードするか、サンプルデータを生成してください")
+        st.info()
 
 # フッター
 # フッター
