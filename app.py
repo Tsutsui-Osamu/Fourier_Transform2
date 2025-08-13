@@ -174,7 +174,7 @@ with col2:
                 except Exception as e:
                     st.error(f"❌ 計算エラー: {e}")
     else:
-        st.info("サイドバーからCSVファイルをアップロードするか、サンプルデータを生成してください")
+        st.info("サイドバーからCSVファイルをアップロードするか、サンプルデータを生成してください🐳")
 
 # フッター
 st.markdown("---")
