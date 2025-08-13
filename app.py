@@ -47,8 +47,8 @@ uploaded_file = st.sidebar.file_uploader(
 )
 
 # パラメータ設定（軽量デフォルト）
-w_max = st.sidebar.number_input("最大周波数 (w_max)", min_value=10, max_value=1000, value=20, step=5)
-w_step = st.sidebar.number_input("周波数ステップ", min_value=0.1, max_value=2.0, value=1.0, step=0.1)
+w_max = st.sidebar.number_input("最大周波数 (w_max)", min_value=10, max_value=1000, value=200, step=5)
+w_step = st.sidebar.number_input("周波数ステップ", min_value=0.1, max_value=2.0, value=0.5, step=0.1)
 
 # サンプルデータ生成機能
 st.sidebar.markdown("---")
